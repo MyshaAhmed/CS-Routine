@@ -1,0 +1,207 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #dde7df;
+    justify-content: center;
+    
+}
+table {
+    width: 1600px; /* Fixed width */
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    background: #f5f7f6;
+}
+h1 {
+    color: #2b4d37;
+    text-transform: uppercase;
+}
+td, th {
+    border: 1px solid #ccc;
+    text-align: center;
+    padding: 5px;
+    width: 8.3%; /* Fixed column width */
+    min-height: 50px; /* Fixed row height */
+    overflow: hidden;
+    font: 14px sans-serif;
+    text-wrap:balance;
+    
+}
+td{
+    background: #ffffff ;
+    font-size: 14px;
+    line-height: 1.4;
+}
+th {
+    background: #2b4d37;
+    color: white;
+    text-transform: uppercase;
+}
+.report-cell {
+    background: #ffd4d4 !important;
+    cursor: default !important;
+    font: 12px sans-serif;
+}
+.container {
+    overflow-x: auto; /* Horizontal scroll */
+    white-space: nowrap;
+    background: white;
+    width: 95%;
+    max-width: 1200px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+button {
+    margin: 5px 0;
+    padding: 8px 16px;
+    font-size: 16px;
+}
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 2px solid #2b4d37;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1000;
+}
+.popup label {
+    display: block;
+    margin-bottom: 10px;
+}
+.table-container {
+    
+    white-space: nowrap;
+    width: 100%;
+    max-width: 100%;
+    background: white;
+    padding: 20px;
+    margin-right: 5px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    overflow-x: auto; /* Enable horizontal scrolling */
+    
+}
+.add-batch-btn{
+    background-color: #2b4d37;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    
+}
+.add-batch-div
+{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 50px;
+}
+#highlight {
+    background-color: #d0e7d2;
+    font-weight: bold;
+}
+
+
+/* printing:====> */
+.print-btn {
+    background-color: #2b4d37;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-right: 20px;
+}
+
+@media print {
+    body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+    }
+    .add-batch-div, .popup, .report-cell, button, .no-print {
+        display: none !important;
+    }
+    .table-container {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        overflow: visible !important;
+        page-break-after: always;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: visible !important;
+    }
+        
+    .dynamicTable {
+        width: 100%;
+        font-size: 10px; /* Make fonts smaller for printing */
+        table-layout: fixed;
+        page-break-inside: avoid;
+        margin: 0 0 30px 0;
+    }
+    table {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+        table-layout: fixed !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    td, th {
+        padding: 3px 2px;
+        font-size: 10px;
+        word-wrap: break-word;
+        line-height: 1.2;
+        width: 11% !important; /* Each column gets equal width */
+        max-width: 11% !important;
+        overflow: hidden !important;
+        white-space: normal !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+    }
+    
+    td:first-child, th:first-child {
+        width: 12% !important; /* First column slightly wider for batch info */
+    }
+    
+    /* Force specific width for 9th period column */
+    th:nth-child(10), td:nth-child(10) {
+        width: 11% !important;
+        max-width: 11% !important;
+        overflow: hidden !important;
+    }
+    
+    h1 {
+        font-size: 16px;
+        margin: 5px 0;
+    }  
+    .day-heading {
+        page-break-before: always;
+        margin-top: 15px;
+    }  
+    .table-sat h1 {
+        page-break-before: avoid;
+    }
+    /* Ensure each day's table stays together */
+    .table-sat, .table-sun, .table-mon, .table-tue, .table-wed {
+        page-break-inside: avoid;
+        page-break-after: always;
+    }
+    
+    #highlight {
+        background-color: #d0e7d2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+   

@@ -24,7 +24,7 @@ const BatchPopup = ({ onClose, onAdd }) => {
       transform: 'translate(-50%, -50%)',
       backgroundColor: 'white',
       padding: '20px',
-      border: '2px solid #2b4d37'
+      border: '3px solid #2b4d37'
     }}>
       <h3>Enter Batch Details</h3>
       <form onSubmit={handleSubmit}>

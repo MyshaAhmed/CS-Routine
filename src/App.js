@@ -7,44 +7,156 @@ import html2pdf from 'html2pdf.js';
 import './styles/main.css';
 
 function App() {
-  // State management for core functionality
-  const [days] = useState(['sat', 'sun', 'mon', 'tue', 'wed']); // List of days to display
-  const [batches, setBatches] = useState([]); // Stores all batch data
-  const [selectedCell, setSelectedCell] = useState(null); // Currently selected table cell
-  const [showBatchPopup, setShowBatchPopup] = useState(false); // Batch popup visibility
-  const [showEditPopup, setShowEditPopup] = useState(false); // Edit popup visibility
+  const [days] = useState(['sat', 'sun', 'mon', 'tue', 'wed']);
+  const [batches, setBatches] = useState([]);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [showBatchPopup, setShowBatchPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
 
-  // Generates pastel colors for batch rows
-  const getLightColor = () => {
-    const hue = Math.floor(Math.random() * 360);
-    return `hsl(${255}, 255, 255)`; // making it white coz pastel is not looking good
-  };
-
-  // Handles batch creation
+  // Add new batch with conflict tracking
   const addBatch = (batchData) => {
     const newBatch = {
       ...batchData,
-      id: Date.now(), // Unique ID based on timestamp
-      color: getLightColor()
+      id: Date.now(),
+      color: '#ffffff',
+      schedule: days.reduce((acc, day) => ({
+        ...acc, 
+        [day]: { 
+          'A section': {}, 
+          'B section': {}, 
+          'C section': {} 
+        }
+      }), {}),
+      conflicts: days.reduce((acc, day) => ({
+        ...acc, 
+        [day]: { 
+          'A section': {}, 
+          'B section': {}, 
+          'C section': {} 
+        }
+      }), {})
     };
-    setBatches(prev => [...prev, newBatch]); // Immutable state update
+    setBatches(prev => [...prev, newBatch]);
     setShowBatchPopup(false);
   };
 
-  // Deletes batch across all days
+  // Handle batch deletion
   const handleDeleteBatch = (batchId) => {
-    if (window.confirm('Are you sure you want to delete this batch from all days?')) {
+    if (window.confirm('Delete this batch from all days?')) {
       setBatches(prev => prev.filter(batch => batch.id !== batchId));
     }
   };
 
-  // Handles cell click for editing
+  // Handle cell click to gather context data
   const handleCellClick = (cellInfo) => {
-    setSelectedCell(cellInfo);
+    const teacherSchedule = {};
+    const occupiedRooms = {};
+
+    // Build teacher and room occupancy maps
+    batches.forEach(batch => {
+      const daySchedule = batch.schedule?.[cellInfo.day] || {};
+      Object.entries(daySchedule).forEach(([section, periods]) => {
+        Object.entries(periods).forEach(([period, data]) => {
+          data.teachers?.forEach(teacher => {
+            if (!teacherSchedule[teacher]) teacherSchedule[teacher] = {};
+            if (!teacherSchedule[teacher][section]) teacherSchedule[teacher][section] = [];
+            teacherSchedule[teacher][section].push(parseInt(period));
+          });
+        });
+      });
+    });
+
+    setSelectedCell({
+      ...cellInfo,
+      teacherSchedule,
+      occupiedRooms
+    });
     setShowEditPopup(true);
   };
 
-  // Print functionality
+  // Handle cell save with conflict checks
+  const handleSaveCell = (cellInfo, newData) => {
+  setBatches(prev => prev.map(batch => {
+    if (batch.id !== cellInfo.batchId) return batch;
+
+    const codeValue = parseInt(newData.code.split(' ').pop());
+    const isSessional = !isNaN(codeValue) && codeValue % 2 === 0;
+    const validSessionalPeriods = [1, 4, 7];
+    
+    // Validate sessional placement
+    if (isSessional && !validSessionalPeriods.includes(cellInfo.period)) {
+      alert('Sessional courses must be placed at 1st, 4th, or 7th period');
+      return batch;
+    }
+
+    // Handle sessional period span
+    const periods = isSessional ? 
+      [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
+      [cellInfo.period];
+
+      // Check for conflicts
+      const conflicts = {
+        teachers: new Set(),
+        rooms: new Set(),
+        sections: new Set()
+      };
+
+      batches.forEach(b => {
+        Object.entries(b.schedule[cellInfo.day]).forEach(([section, periods]) => {
+          Object.entries(periods).forEach(([period, data]) => {
+            if (period === cellInfo.period.toString()) {
+              data.teachers?.forEach(t => newData.teachers.includes(t) && conflicts.teachers.add(t));
+              data.rooms?.forEach(r => newData.rooms.includes(r) && conflicts.rooms.add(r));
+              section !== cellInfo.section && conflicts.sections.add(section);
+            }
+          });
+        });
+      });
+
+      // Handle conflicts
+      if (conflicts.teachers.size > 0 || conflicts.rooms.size > 0 || conflicts.sections.size > 0) {
+        return handleConflicts(batch, cellInfo, newData, conflicts);
+      }
+
+      // Update valid entries
+      return updateSchedule(batch, cellInfo, newData, isSessional);
+    }));
+  };
+
+  // Update schedule without conflicts
+  const updateSchedule = (batch, cellInfo, newData, isSessional) => {
+    const periods = isSessional ? 
+      [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
+      [cellInfo.period];
+
+    const newSchedule = JSON.parse(JSON.stringify(batch.schedule));
+    periods.forEach(p => {
+      newSchedule[cellInfo.day][cellInfo.section][p] = {
+        ...newData,
+        isSessional,
+        startPeriod: isSessional ? cellInfo.period : null
+      };
+    });
+    
+    return { ...batch, schedule: newSchedule };
+  };
+
+  // Handle conflicting entries
+  const handleConflicts = (batch, cellInfo, newData, conflicts) => {
+    const newConflicts = JSON.parse(JSON.stringify(batch.conflicts));
+    const conflictEntry = {
+      ...newData,
+      teachers: [...conflicts.teachers],
+      rooms: [...conflicts.rooms],
+      sections: [...conflicts.sections],
+      originalPeriod: cellInfo.period
+    };
+
+    newConflicts[cellInfo.day][cellInfo.section][cellInfo.period] = conflictEntry;
+    return { ...batch, conflicts: newConflicts };
+  };
+
+  // Print handling
   const handlePrint = () => {
     const elementsToHide = document.querySelectorAll('.no-print');
     elementsToHide.forEach(el => el.style.display = 'none');
@@ -52,7 +164,7 @@ function App() {
     elementsToHide.forEach(el => el.style.display = '');
   };
 
-  // PDF export functionality
+  // PDF export handling
   const handleDownloadPDF = () => {
     const elements = document.querySelectorAll('.table-container');
     const opt = {
@@ -60,31 +172,24 @@ function App() {
       filename: 'class-routine.pdf',
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
-    
-    const worker = html2pdf().set(opt);
-    elements.forEach(element => {
-      worker.from(element).save();
-    });
+    html2pdf().set(opt).from(elements).save();
   };
 
   return (
     <div className="App">
-      {/* Control buttons component */}
+      <div className="header" style={{ textAlign: 'center', margin: '20px 0' }}>
+        <h4>Rajshahi University of Engineering & Technology</h4>
+        <h5>Department of Computer Science & Engineering</h5>
+      </div>
+
       <PrintControls 
         onAddBatch={() => setShowBatchPopup(true)}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
       />
 
-      {/* Institution header */}
-      <div className="header" style={{ textAlign: 'center', margin: '20px 0' }}>
-        <h4>Rajshahi University of Engineering & Technology</h4>
-        <h5>Department of Computer Science & Engineering</h5>
-      </div>
-
-      {/* Main table container */}
       <div className="table-container-wrapper">
         {days.map(day => (
           <div key={day} className="table-container">
@@ -98,7 +203,6 @@ function App() {
         ))}
       </div>
 
-      {/* Popup modals */}
       {showBatchPopup && (
         <BatchPopup
           onClose={() => setShowBatchPopup(false)}
@@ -110,7 +214,12 @@ function App() {
         <EditPopup
           cellData={selectedCell}
           onClose={() => setShowEditPopup(false)}
-          onSave={() => setShowEditPopup(false)}
+          onSave={(result) => {
+            if (result.validData) {
+              handleSaveCell(selectedCell, result.validData);
+            }
+            setShowEditPopup(false);
+          }}
         />
       )}
     </div>

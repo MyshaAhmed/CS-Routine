@@ -123,3 +123,39 @@ th {
       gap: 0;
     }
   }
+
+  /* Conflict styling */
+.conflict-cell {
+    background-color: #ffd4d4 !important;
+    color: #cc0000;
+    font-size: 0.9em;
+  }
+  
+  .conflict-report {
+    background-color: #fff3cd !important;
+    font-size: 0.8em;
+    line-height: 1.2;
+  }
+  
+  .error-field {
+    border: 2px solid #dc3545 !important;
+  }
+  
+  .errors {
+    color: #dc3545;
+    margin-bottom: 1rem;
+  }
+  
+  .sessional-cell {
+    background-color: #d4edda !important;
+    font-weight: bold;
+  }
+  
+  /* Print adjustments */
+  @media print {
+    .conflict-cell, .conflict-report {
+      background-color: transparent !important;
+      color: inherit;
+      border: 1px dashed #ccc;
+    }
+  }

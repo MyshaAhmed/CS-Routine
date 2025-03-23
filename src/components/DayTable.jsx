@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Time slots configuration for table headers
 const timeSlots = [
   '8:00 - 8:50 AM',
   '8:50 - 9:40 AM',
@@ -14,55 +13,115 @@ const timeSlots = [
 ];
 
 const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
-  // Sort batches by seniority: 4th > 3rd > 2nd > 1st > Even > Odd
+  // Sort batches by year and semester
   const sortedBatches = [...batches].sort((a, b) => {
-    const yearValue = { '4th': 4, '3rd': 3, '2nd': 2, '1st': 1 };
-    const yearDiff = yearValue[b.year] - yearValue[a.year];
-    if (yearDiff !== 0) return yearDiff;
-    const semesterValue = { 'Even': 1, 'Odd': 0 };
-    return semesterValue[b.semester] - semesterValue[a.semester];
+    const yearOrder = { '4th': 4, '3rd': 3, '2nd': 2, '1st': 1 };
+    const semOrder = { 'Even': 1, 'Odd': 0 };
+    return yearOrder[b.year] - yearOrder[a.year] || semOrder[b.semester] - semOrder[a.semester];
   });
 
-  // Handle batch deletion confirmation
-  const handleDeleteBatch = (batchId) => {
-    if (window.confirm('Delete this batch from all days?')) {
-      onDeleteBatch(batchId);
+  const renderCells = (batch, section) => {
+    const cells = [];
+    let currentPeriod = 1;
+
+    while (currentPeriod <= 9) {
+      const cellInfo = getCellContent(batch, section, currentPeriod);
+      
+      if (cellInfo.isSessional) {
+        if (cellInfo.isStart) {
+          cells.push(
+            <td
+              key={currentPeriod}
+              colSpan="3"
+              className="sessional-cell"
+              onClick={() => onCellClick({
+                day,
+                period: currentPeriod,
+                batchId: batch.id,
+                section
+              })}
+            >
+              {cellInfo.content.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </td>
+          );
+          currentPeriod += 3; // Skip next 2 periods
+        } else {
+          // Hidden continuation cell
+          cells.push(<td key={currentPeriod} style={{ display: 'none' }} />);
+          currentPeriod++;
+        }
+      } else {
+        cells.push(
+          <td
+            key={currentPeriod}
+            onClick={() => onCellClick({
+              day,
+              period: currentPeriod,
+              batchId: batch.id,
+              section
+            })}
+          >
+            {cellInfo.content.split('\n').map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </td>
+        );
+        currentPeriod++;
+      }
     }
+    
+    return cells;
   };
 
-  // Format cell content for display
+
+
+  // Get cell content with conflict detection
   const getCellContent = (batch, section, period) => {
-    const schedule = batch.schedule?.[day]?.[section]?.[period] || {};
-    return [
-      schedule.courseCode,
-      schedule.teachers?.join('/'),
-      schedule.rooms?.join('/')
-    ].filter(Boolean).join('\n');
+    const schedule = batch.schedule[day][section][period];
+    const conflict = batch.conflicts[day][section][period];
+
+    // Handle conflict cells
+    if (conflict) {
+      return {
+        content: `CONFLICT\nT: ${conflict.teachers.join(', ')}\nR: ${conflict.rooms.join(', ')}`,
+        className: 'conflict-cell',
+        colSpan: 1
+      };
+    }
+
+    // Handle empty cells
+    if (!schedule) return { content: '', className: '', colSpan: 1 };
+
+    // Handle sessional courses
+    const isSessionalStart = schedule.isSessional && schedule.startPeriod === period;
+    return {
+      content: `${schedule.code}\n${schedule.teachers.join('/')}\n${schedule.rooms.join('/')}`,
+      className: isSessionalStart ? 'sessional-cell' : '',
+      colSpan: isSessionalStart ? 3 : 1
+    };
   };
 
   return (
     <div className={`table-${day}`}>
-      {/* Day header */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{color:'#2b4d37'}}>CLASS ROUTINE - {day.toUpperCase()}</h1>
+        <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE - {day.toUpperCase()}</h1>
       </div>
 
-      {/* Main table structure */}
-      <table id={`dynamicTable-${day}`} className="dynamicTable">
+      <table className="dynamicTable">
         <thead>
-          {/* Column headers */}
           <tr>
-            <th style={{ width: '15%' }}>Period →</th>
+            <th style={{ width: '15%' }}>PERIOD →</th>
             {[...Array(9)].map((_, i) => (
-              <th key={i} style={{ width: '8%' }}>{i+1}th</th>
+              <th key={i} style={{ width: '8%' }}>{i+1}</th>
             ))}
-            <th className="no-print" style={{ width: '8%' }}>Duplicates</th>
-            <th className="no-print" style={{ width: '4%' }}>Action</th>
+            <th className="no-print" style={{ width: '8%' }}>DUPLICATES</th>
+            <th className="no-print" style={{ width: '4%' }}>ACTION</th>
           </tr>
           
-          {/* Time slots row */}
           <tr>
-            <td id="highlight">Time →</td>
+            <td id="highlight">TIME →</td>
             {timeSlots.map((time, i) => (
               <td key={i} style={{ width: '8%' }}>{time}</td>
             ))}
@@ -70,52 +129,74 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
             <td className="no-print" rowSpan="2"></td>
           </tr>
           
-          {/* Day identification row */}
           <tr>
-            <td id="highlight">Day →</td>
+            <td id="highlight">DAY →</td>
             <td colSpan="9" style={{ textAlign: 'center' }}>
-              {day.charAt(0).toUpperCase() + day.slice(1)}
+              {day.charAt(0).toUpperCase() + day.slice(1).toUpperCase()}
             </td>
           </tr>
         </thead>
 
-        {/* Batch rows - 3 sections per batch */}
         <tbody>
           {sortedBatches.map((batch) => (
             <React.Fragment key={batch.id}>
               {['A section', 'B section', 'C section'].map((section, i) => (
                 <tr key={`${batch.id}-${i}`} style={{ backgroundColor: batch.color }}>
-                  {/* Batch info column */}
+                  {/* Batch Info Column */}
                   <td style={{ width: '15%' }}>
-                    {batch.year} Year<br/>
-                    {batch.semester} Semester<br/>
+                    {batch.year} Year {batch.semester} Semester<br/>
                     {section}<br/>
                     ({batch.name})
                   </td>
-                  
-                  {/* Period columns */}
-                  {[...Array(9)].map((_, period) => (
-                    <td
-                      key={period}
-                      style={{ width: '8%' }}
-                      onClick={() => onCellClick({ day, period: period+1, batchId: batch.id, section })}
-                      dangerouslySetInnerHTML={{
-                        __html: getCellContent(batch, section, period+1).replace(/\n/g, '<br/>')
-                      }}
-                    />
-                  ))}
-                  
-                  {/* Report cell and delete button */}
-                  <td className="report-cell" style={{ width: '8%' }}></td>
+
+                  {/* Period Cells */}
+                  {Array.from({ length: 9 }, (_, period) => {
+                    const currentPeriod = period + 1;
+                    const { content, className, colSpan } = getCellContent(batch, section, currentPeriod);
+                    
+                    // Skip cells covered by sessional courses
+                    if (className.includes('sessional-cell') && colSpan === 1) return null;
+
+                    return (
+                      <td
+                        key={period}
+                        colSpan={colSpan}
+                        className={className}
+                        onClick={() => onCellClick({
+                          day,
+                          period: currentPeriod,
+                          batchId: batch.id,
+                          section
+                        })}
+                      >
+                        {content.split('\n').map((line, i) => (
+                          <div key={i}>{line}</div>
+                        ))}
+                      </td>
+                    );
+                  })}
+
+                  {/* Conflict Report Cell */}
+                  <td className="conflict-report no-print">
+                    {Object.values(batch.conflicts[day][section]).map((conflict, i) => (
+                      <div key={i} style={{ fontSize: '0.8em', lineHeight: '1.2' }}>
+                        <strong>{conflict.code}</strong> @ P{conflict.originalPeriod}<br/>
+                        T: {conflict.teachers.join(', ')}<br/>
+                        R: {conflict.rooms.join(', ')}
+                      </div>
+                    ))}
+                  </td>
+
+                  {/* Delete Button (only on first row) */}
                   {i === 0 && (
-                    <td className="no-print" style={{ width: '4%' }}>
+                    <td className="no-print">
                       <button 
-                        onClick={() => handleDeleteBatch(batch.id)}
+                        onClick={() => onDeleteBatch(batch.id)}
                         style={{ 
-                          margin: '5px 0',
+                          padding: '4px 8px',
                           backgroundColor: '#ff4444',
                           color: 'white',
-                          padding: '6px 0px',
+                          border: 'none',
                           borderRadius: '3px',
                           cursor: 'pointer'
                         }}

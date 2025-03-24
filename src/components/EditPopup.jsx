@@ -69,7 +69,8 @@ const EditPopup = ({ cellData, onClose, onSave }) => {
       // Check other sections for same period
       Object.entries(teacherSchedule).forEach(([section, periods]) => {
         if (section !== currentSection && periods.includes(currentPeriod)) {
-          newErrors.push(`${teacher} is already teaching in ${section} at this time`);
+          //newErrors.push(`${teacher} is already teaching in ${section} at this time`);
+          alert(`${teacher} is already teaching in ${section} at this time`);
         }
       });
     });
@@ -96,7 +97,7 @@ const EditPopup = ({ cellData, onClose, onSave }) => {
       const validSessionalPeriods = [1, 4, 7];
       
       if (isEven && !validSessionalPeriods.includes(currentPeriod)) {
-        newErrors.push('Sessional courses must be in 1st, 4th, or 7th period');
+        alert('Sessional courses must be placed at 1st, 4th, or 7th period');
       }
     }
 

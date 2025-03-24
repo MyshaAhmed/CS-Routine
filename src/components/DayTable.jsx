@@ -180,9 +180,9 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                   <td className="conflict-report no-print">
                     {Object.values(batch.conflicts[day][section]).map((conflict, i) => (
                       <div key={i} style={{ fontSize: '0.8em', lineHeight: '1.2' }}>
-                        <strong>{conflict.code}</strong> @ P{conflict.originalPeriod}<br/>
-                        T: {conflict.teachers.join(', ')}<br/>
-                        R: {conflict.rooms.join(', ')}
+                        Code:{conflict.code}, Period: {conflict.originalPeriod}<br/>
+                        Teacher Conflict: {conflict.teachers.join(', ')}<br/>
+                        Room Conflict: {conflict.rooms.join(', ')}
                       </div>
                     ))}
                   </td>
@@ -193,10 +193,10 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                       <button 
                         onClick={() => onDeleteBatch(batch.id)}
                         style={{ 
-                          padding: '4px 8px',
+                          padding: '4px 0px',
                           backgroundColor: '#ff4444',
                           color: 'white',
-                          border: 'none',
+                          border: '1px solid black',
                           borderRadius: '3px',
                           cursor: 'pointer'
                         }}

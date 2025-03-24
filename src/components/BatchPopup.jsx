@@ -67,8 +67,16 @@ const BatchPopup = ({ onClose, onAdd }) => {
         <br />
         
         <div style={{ marginTop: '15px' }}>
-          <button type="submit">Add</button>
-          <button type="button" onClick={onClose} style={{ marginLeft: '10px' }}>
+          <button type="submit" style={{ padding: '8px 20px',
+              backgroundColor: '#2b4d37',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px' }}>Add</button>
+          <button type="button" onClick={onClose} style={{ marginLeft:'10px', padding: '8px 12px',
+              backgroundColor: '#2b4d37',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px' }}>
             Cancel
           </button>
         </div>

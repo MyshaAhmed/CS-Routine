@@ -180,8 +180,21 @@ function App() {
   return (
     <div className="App">
       <div className="header" style={{ textAlign: 'center', margin: '20px 0' }}>
-        <h4>Rajshahi University of Engineering & Technology</h4>
-        <h5>Department of Computer Science & Engineering</h5>
+      <img 
+        src="/RUET_logo.svg.png" 
+        alt="RUET Logo" 
+        style={{ 
+          height: '80px',  // Maintain aspect ratio
+          marginBottom: '1rem',
+          filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))' // Optional styling
+        }}
+      />
+      <h4 style={{ margin: '8px 0', color: '#2b4d37' }}>
+        Rajshahi University of Engineering & Technology
+      </h4>
+      <h5 style={{ margin: 0, color: '#3d6b4f' }}>
+        Department of Computer Science & Engineering
+      </h5>
       </div>
 
       <PrintControls 

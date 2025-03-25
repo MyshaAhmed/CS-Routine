@@ -20,63 +20,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     return yearOrder[b.year] - yearOrder[a.year] || semOrder[b.semester] - semOrder[a.semester];
   });
 
-  const renderCells = (batch, section) => {
-    const cells = [];
-    let currentPeriod = 1;
-
-    while (currentPeriod <= 9) {
-      const cellInfo = getCellContent(batch, section, currentPeriod);
-      
-      if (cellInfo.isSessional) {
-        if (cellInfo.isStart) {
-          cells.push(
-            <td
-              key={currentPeriod}
-              colSpan="3"
-              className="sessional-cell"
-              onClick={() => onCellClick({
-                day,
-                period: currentPeriod,
-                batchId: batch.id,
-                section
-              })}
-            >
-              {cellInfo.content.split('\n').map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-            </td>
-          );
-          currentPeriod += 3; // Skip next 2 periods
-        } else {
-          // Hidden continuation cell
-          cells.push(<td key={currentPeriod} style={{ display: 'none' }} />);
-          currentPeriod++;
-        }
-      } else {
-        cells.push(
-          <td
-            key={currentPeriod}
-            onClick={() => onCellClick({
-              day,
-              period: currentPeriod,
-              batchId: batch.id,
-              section
-            })}
-          >
-            {cellInfo.content.split('\n').map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </td>
-        );
-        currentPeriod++;
-      }
-    }
-    
-    return cells;
-  };
-
-
-
+  
   // Get cell content with conflict detection
   const getCellContent = (batch, section, period) => {
     const schedule = batch.schedule[day][section][period];
@@ -150,32 +94,47 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                   </td>
 
                   {/* Period Cells */}
-                  {Array.from({ length: 9 }, (_, period) => {
-                    const currentPeriod = period + 1;
-                    const { content, className, colSpan } = getCellContent(batch, section, currentPeriod);
-                    
-                    // Skip cells covered by sessional courses
-                    if (className.includes('sessional-cell') && colSpan === 1) return null;
+                  {(function() {
+                    const cells = [];
+                    let skip = 0;
+                    for (let periodIdx = 0; periodIdx < 9; periodIdx++) {
+                      if (skip > 0) {
+                        skip--;
+                        continue;
+                      }
 
-                    return (
-                      <td
-                        key={period}
-                        colSpan={colSpan}
-                        className={className}
-                        onClick={() => onCellClick({
-                          day,
-                          period: currentPeriod,
-                          batchId: batch.id,
-                          section
-                        })}
-                      >
-                        {content.split('\n').map((line, i) => (
-                          <div key={i}>{line}</div>
-                        ))}
-                      </td>
-                    );
-                  })}
+                      const currentPeriod = periodIdx + 1;
+                      const { content, className, colSpan } = getCellContent(batch, section, currentPeriod);
 
+                      if (colSpan === 1 && className.includes('sessional-cell')) {
+                        continue;
+                      }
+
+                      cells.push(
+                        <td
+                          key={periodIdx}
+                          colSpan={colSpan}
+                          className={className}
+                          onClick={() => onCellClick({
+                            day,
+                            period: currentPeriod,
+                            batchId: batch.id,
+                            section
+                          })}
+                        >
+                          {content.split('\n').map((line, i) => (
+                            <div key={i}>{line}</div>
+                          ))}
+                        </td>
+                      );
+
+                      if (colSpan > 1) {
+                        skip = colSpan - 1;
+                      }
+                    }
+                    return cells;
+                  })()}
+                  
                   {/* Conflict Report Cell */}
                   <td className="conflict-report no-print">
                     {Object.values(batch.conflicts[day][section]).map((conflict, i) => (

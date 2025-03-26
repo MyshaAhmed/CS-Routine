@@ -40,26 +40,23 @@ function App() {
     setShowBatchPopup(false);
   };
 
-  // Handle batch deletion
   const handleDeleteBatch = (batchId) => {
     if (window.confirm('Delete this batch from all days?')) {
       setBatches(prev => prev.filter(batch => batch.id !== batchId));
     }
   };
 
-  // Handle cell click to gather context data
   const handleCellClick = (cellInfo) => {
     const teacherSchedule = {};
     const occupiedRooms = {};
 
-    // Build teacher and room occupancy maps
     batches.forEach(batch => {
       const daySchedule = batch.schedule?.[cellInfo.day] || {};
       Object.entries(daySchedule).forEach(([section, periods]) => {
         Object.entries(periods).forEach(([period, data]) => {
           data.teachers?.forEach(teacher => {
-            if (!teacherSchedule[teacher]) teacherSchedule[teacher] = {};
-            if (!teacherSchedule[teacher][section]) teacherSchedule[teacher][section] = [];
+            teacherSchedule[teacher] = teacherSchedule[teacher] || {};
+            teacherSchedule[teacher][section] = teacherSchedule[teacher][section] || [];
             teacherSchedule[teacher][section].push(parseInt(period));
           });
         });
@@ -74,27 +71,28 @@ function App() {
     setShowEditPopup(true);
   };
 
-  // Handle cell save with conflict checks
   const handleSaveCell = (cellInfo, newData) => {
-  setBatches(prev => prev.map(batch => {
-    if (batch.id !== cellInfo.batchId) return batch;
+    setBatches(prev => prev.map(batch => {
+      if (batch.id !== cellInfo.batchId) return batch;
 
-    const codeValue = parseInt(newData.code.split(' ').pop());
-    const isSessional = !isNaN(codeValue) && codeValue % 2 === 0;
-    const validSessionalPeriods = [1, 4, 7];
-    
-    // Validate sessional placement
-    if (isSessional && !validSessionalPeriods.includes(cellInfo.period)) {
-      alert('Sessional courses must be placed at 1st, 4th, or 7th period');
-      return batch;
-    }
+      const codeValue = parseInt(newData.code.split(' ').pop());
+      const isSessional = !isNaN(codeValue) && codeValue % 2 === 0;
+      const validSessionalPeriods = [1, 4, 7];
+      
+      if (isSessional && !validSessionalPeriods.includes(cellInfo.period)) {
+        alert('Sessional courses must be placed at 1st, 4th, or 7th period');
+        return batch;
+      }
 
-    // Handle sessional period span
-    const periods = isSessional ? 
-      [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
-      [cellInfo.period];
+      const periods = isSessional ? 
+        [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
+        [cellInfo.period];
 
-      // Check for conflicts
+      // Clear existing conflicts for this cell
+      const cleanConflicts = JSON.parse(JSON.stringify(batch.conflicts));
+      delete cleanConflicts[cellInfo.day][cellInfo.section][cellInfo.period];
+
+      // Detect new conflicts
       const conflicts = {
         teachers: new Set(),
         rooms: new Set(),
@@ -104,26 +102,38 @@ function App() {
       batches.forEach(b => {
         Object.entries(b.schedule[cellInfo.day]).forEach(([section, periods]) => {
           Object.entries(periods).forEach(([period, data]) => {
-            if (period === cellInfo.period.toString()) {
-              data.teachers?.forEach(t => newData.teachers.includes(t) && conflicts.teachers.add(t));
-              data.rooms?.forEach(r => newData.rooms.includes(r) && conflicts.rooms.add(r));
-              section !== cellInfo.section && conflicts.sections.add(section);
+            if (period === cellInfo.period.toString() && data) {
+              data.teachers?.forEach(t => {
+                if (newData.teachers.includes(t)) conflicts.teachers.add(t);
+              });
+              data.rooms?.forEach(r => {
+                if (newData.rooms.includes(r)) conflicts.rooms.add(r);
+              });
+              if (section !== cellInfo.section) conflicts.sections.add(section);
             }
           });
         });
       });
 
-      // Handle conflicts
-      if (conflicts.teachers.size > 0 || conflicts.rooms.size > 0 || conflicts.sections.size > 0) {
-        return handleConflicts(batch, cellInfo, newData, conflicts);
+      // Handle conflicts or update schedule
+      if (conflicts.teachers.size > 0 || conflicts.rooms.size > 0) {
+        return handleConflicts(
+          { ...batch, conflicts: cleanConflicts },
+          cellInfo,
+          newData,
+          conflicts
+        );
       }
 
-      // Update valid entries
-      return updateSchedule(batch, cellInfo, newData, isSessional);
+      return updateSchedule(
+        { ...batch, conflicts: cleanConflicts },
+        cellInfo,
+        newData,
+        isSessional
+      );
     }));
   };
 
-  // Update schedule without conflicts
   const updateSchedule = (batch, cellInfo, newData, isSessional) => {
     const periods = isSessional ? 
       [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
@@ -141,7 +151,6 @@ function App() {
     return { ...batch, schedule: newSchedule };
   };
 
-  // Handle conflicting entries
   const handleConflicts = (batch, cellInfo, newData, conflicts) => {
     const newConflicts = JSON.parse(JSON.stringify(batch.conflicts));
     const conflictEntry = {
@@ -152,11 +161,14 @@ function App() {
       originalPeriod: cellInfo.period
     };
 
-    newConflicts[cellInfo.day][cellInfo.section][cellInfo.period] = conflictEntry;
+    // Only store if actual conflicts exist
+    if (conflictEntry.teachers.length > 0 || conflictEntry.rooms.length > 0) {
+      newConflicts[cellInfo.day][cellInfo.section][cellInfo.period] = conflictEntry;
+    }
+
     return { ...batch, conflicts: newConflicts };
   };
 
-  // Print handling
   const handlePrint = () => {
     const elementsToHide = document.querySelectorAll('.no-print');
     elementsToHide.forEach(el => el.style.display = 'none');
@@ -164,7 +176,6 @@ function App() {
     elementsToHide.forEach(el => el.style.display = '');
   };
 
-  // PDF export handling
   const handleDownloadPDF = () => {
     const elements = document.querySelectorAll('.table-container');
     const opt = {
@@ -180,21 +191,21 @@ function App() {
   return (
     <div className="App">
       <div className="header" style={{ textAlign: 'center', margin: '20px 0' }}>
-      <img 
-        src="/RUET_logo.svg.png" 
-        alt="RUET Logo" 
-        style={{ 
-          height: '80px',  // Maintain aspect ratio
-          marginBottom: '1rem',
-          filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))' // Optional styling
-        }}
-      />
-      <h4 style={{ margin: '8px 0', color: '#2b4d37' }}>
-        Rajshahi University of Engineering & Technology
-      </h4>
-      <h5 style={{ margin: 0, color: '#3d6b4f' }}>
-        Department of Computer Science & Engineering
-      </h5>
+        <img 
+          src="/RUET_logo.svg.png" 
+          alt="RUET Logo" 
+          style={{ 
+            height: '80px',
+            marginBottom: '1rem',
+            filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))'
+          }}
+        />
+        <h4 style={{ margin: '8px 0', color: '#2b4d37' }}>
+          Rajshahi University of Engineering & Technology
+        </h4>
+        <h5 style={{ margin: 0, color: '#3d6b4f' }}>
+          Department of Computer Science & Engineering
+        </h5>
       </div>
 
       <PrintControls 

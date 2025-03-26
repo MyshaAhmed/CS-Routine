@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef  } from 'react';
 import DayTable from './components/DayTable';
 import BatchPopup from './components/BatchPopup';
 import EditPopup from './components/EditPopup';
@@ -13,6 +13,8 @@ function App() {
   const [showBatchPopup, setShowBatchPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
 
+
+  const tableContainerRef = useRef(null);
   // Add new batch with conflict tracking
   const addBatch = (batchData) => {
     const newBatch = {
@@ -177,16 +179,48 @@ function App() {
   };
 
   const handleDownloadPDF = () => {
-    const elements = document.querySelectorAll('.table-container');
+    // Hide elements we don't want in the PDF
+    const elementsToHide = document.querySelectorAll('.no-print');
+    elementsToHide.forEach(el => { 
+      el.style.display = 'none'; 
+    });
+
+    // Configure PDF options
     const opt = {
-      margin: [5, 5, 5, 5],
+      margin: [5, 5, 5, 5], // [top, right, bottom, left] in mm
       filename: 'class-routine.pdf',
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      image: { 
+        type: 'jpeg', 
+        quality: 0.95 
+      },
+      html2canvas: { 
+        scale: 2, 
+        letterRendering: true, 
+        useCORS: true 
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a2', 
+        orientation: 'landscape' 
+      },
+      pagebreak: { 
+        mode: ['avoid-all', 'css', 'legacy'] 
+      }
     };
-    html2pdf().set(opt).from(elements).save();
+
+    // Generate and download PDF
+    html2pdf()
+      .set(opt)
+      .from(tableContainerRef.current)
+      .save()
+      .then(() => {
+        // Restore visibility of hidden elements after PDF generation
+        elementsToHide.forEach(el => { 
+          el.style.display = ''; 
+        });
+      });
   };
+
 
   return (
     <div className="App">
@@ -214,7 +248,8 @@ function App() {
         onDownloadPDF={handleDownloadPDF}
       />
 
-      <div className="table-container-wrapper">
+      <div ref={tableContainerRef} 
+       className="table-container-wrapper">
         {days.map(day => (
           <div key={day} className="table-container">
             <DayTable 

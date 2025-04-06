@@ -1,43 +1,65 @@
 const mongoose = require('mongoose');
 
-const scheduleSectionSchema = new mongoose.Schema({
-  // Dynamic structure for periods 1-9
-}, { strict: false, _id: false });
+const periodSchema = new mongoose.Schema({
+  code: String,
+  teachers: [String],
+  rooms: [String],
+  isSessional: Boolean,
+  startPeriod: Number
+});
 
-const conflictSectionSchema = new mongoose.Schema({
-  // Dynamic structure for conflicts
-}, { strict: false, _id: false });
+const conflictSchema = new mongoose.Schema({
+  code: String,
+  teachers: [String],
+  rooms: [String],
+  sections: [String],
+  originalPeriod: Number
+});
 
 const daySchema = new mongoose.Schema({
-  'A section': scheduleSectionSchema,
-  'B section': scheduleSectionSchema,
-  'C section': scheduleSectionSchema
-}, { _id: false });
+  'A section': {
+    type: Map,
+    of: periodSchema
+  },
+  'B section': {
+    type: Map,
+    of: periodSchema
+  },
+  'C section': {
+    type: Map,
+    of: periodSchema
+  }
+});
 
 const conflictDaySchema = new mongoose.Schema({
-  'A section': conflictSectionSchema,
-  'B section': conflictSectionSchema,
-  'C section': conflictSectionSchema
-}, { _id: false });
+  'A section': {
+    type: Map,
+    of: conflictSchema
+  },
+  'B section': {
+    type: Map,
+    of: conflictSchema
+  },
+  'C section': {
+    type: Map,
+    of: conflictSchema
+  }
+});
 
 const batchSchema = new mongoose.Schema({
-  year: String,
-  semester: String,
-  name: String,
-  color: String,
+  year: { type: String, required: true },
+  semester: { type: String, required: true },
+  name: { type: String, required: true },
+  color: { type: String, default: '#ffffff' },
   schedule: {
-    sat: daySchema,
-    sun: daySchema,
-    mon: daySchema,
-    tue: daySchema,
-    wed: daySchema
+    type: Map,
+    of: daySchema,
+    required: true
   },
   conflicts: {
-    sat: conflictDaySchema,
-    sun: conflictDaySchema,
-    mon: conflictDaySchema,
-    tue: conflictDaySchema,
-    wed: conflictDaySchema
+    type: Map,
+    of: conflictDaySchema,
+    required: true
   }
 });
 

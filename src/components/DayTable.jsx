@@ -20,11 +20,21 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     return yearOrder[b.year] - yearOrder[a.year] || semOrder[b.semester] - semOrder[a.semester];
   });
 
-  
   // Get cell content with conflict detection
   const getCellContent = (batch, section, period) => {
-    const schedule = batch.schedule[day][section][period];
-    const conflict = batch.conflicts[day][section][period];
+    // Handle potential MongoDB Map objects
+    const getMapOrObject = (obj, day, section, period) => {
+      if (!obj || !obj[day] || !obj[day][section]) return null;
+      
+      const sectionData = obj[day][section];
+      // Check if it's a MongoDB Map object or regular object
+      return sectionData instanceof Map ? 
+        sectionData.get(period.toString()) : 
+        sectionData[period];
+    };
+
+    const schedule = getMapOrObject(batch.schedule, day, section, period);
+    const conflict = getMapOrObject(batch.conflicts, day, section, period);
 
     // Handle conflict cells
     if (conflict) {
@@ -83,9 +93,9 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
 
         <tbody>
           {sortedBatches.map((batch) => (
-            <React.Fragment key={batch.id}>
+            <React.Fragment key={batch._id || batch.id}>
               {['A section', 'B section', 'C section'].map((section, i) => (
-                <tr key={`${batch.id}-${i}`} style={{ backgroundColor: batch.color }}>
+                <tr key={`${batch._id || batch.id}-${i}`} style={{ backgroundColor: batch.color }}>
                   {/* Batch Info Column */}
                   <td style={{ width: '15%' }}>
                     {batch.year} Year {batch.semester} Semester<br/>
@@ -118,8 +128,9 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                           onClick={() => onCellClick({
                             day,
                             period: currentPeriod,
-                            batchId: batch.id,
-                            section
+                            batchId: batch._id || batch.id,
+                            section,
+                            content: batch.schedule?.[day]?.[section]?.[currentPeriod]
                           })}
                         >
                           {content.split('\n').map((line, i) => (
@@ -137,20 +148,22 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                   
                   {/* Conflict Report Cell */}
                   <td className="conflict-report no-print">
-                    {Object.values(batch.conflicts[day][section]).map((conflict, i) => (
-                      <div key={i} style={{ fontSize: '0.8em', lineHeight: '1.2' }}>
-                        Code:{conflict.code}, Period: {conflict.originalPeriod}<br/>
-                        Teacher Conflict: {conflict.teachers.join(', ')}<br/>
-                        Room Conflict: {conflict.rooms.join(', ')}
-                      </div>
-                    ))}
+                    {batch.conflicts && batch.conflicts[day] && batch.conflicts[day][section] ? 
+                      Object.entries(batch.conflicts[day][section]).map(([periodKey, conflict], i) => (
+                        <div key={i} style={{ fontSize: '0.8em', lineHeight: '1.2' }}>
+                          Code:{conflict.code}, Period: {conflict.originalPeriod}<br/>
+                          Teacher Conflict: {conflict.teachers?.join(', ') || 'None'}<br/>
+                          Room Conflict: {conflict.rooms?.join(', ') || 'None'}
+                        </div>
+                      )) : null
+                    }
                   </td>
 
                   {/* Delete Button (only on first row) */}
                   {i === 0 && (
                     <td className="no-print">
                       <button 
-                        onClick={() => onDeleteBatch(batch.id)}
+                        onClick={() => onDeleteBatch(batch._id || batch.id)}
                         style={{ 
                           padding: '4px 0px',
                           backgroundColor: '#ff4444',

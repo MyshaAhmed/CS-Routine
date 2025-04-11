@@ -88,5 +88,6 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 **Mysha Ahmed**
 - CSE'20
 - Department of Computer Science & Engineering
-**Rajshahi University of Engineering & Technology (RUET)**
+- **Rajshahi University of Engineering & Technology (RUET)**
+
 

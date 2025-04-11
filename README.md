@@ -23,20 +23,33 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
   - Breaks: `10:30 AM – 10:50 AM` and `1:20 PM – 2:30 PM`
   - Courses: 5 theory + multiple lab sessions (1.5 or 0.75 credit)
 
----
 
 ### ⚙️ Dynamic Routine Management
-- **Auto Batch Setup**: Adding a batch auto-generates rows for its 3 sections
+- **Add Batch Button**:
+   - Adding a batch auto-generates rows for its 3 sections. Means adding a single batch will create a row for 3 sections (A,B and C)
+- **Delete Batch Button**:
+   - Deletes that particular batch from all days (SAT-WED).
+- **Edit Cell**:
+   - When a single cell is clicked, an EditCell popup will show, where we can edit and add cell information like course code, teacher's name, room/lab and also add more teachers taking a single course.
+   - "To clear information of a cell we need to manually clear the edit cell data and reenter new cell data, as delete cell feature is not yet implemented."
 - **Real-time Conflict Detection**:
   - Duplicate teachers or rooms flagged in a **"Duplicates"** column
+  - Duplicate input of a teacher or if the classes overlap at different rooms and sections, if such entry is given, it will show conflict
+  - A teacher can have at most 2 classes a day and it has to be in adjacent periods, if not, it will show conflict
+  - Lab classes(even code) must be taken at the 1st, 4th or 7th period. Lab classes will occupy 3 consecutive periods.  
 - **Teacher Constraints**:
   - A single teacher can take max 2 classes a day per section, must be **adjacent periods**
+  - A single teacher can't take classes at different sections at the same period [time]. If such entry is given, it will show conflict.
+- **Room Constraints**:
+  - Two different classes can not be taken in the same room at the same time. If such entry is given, it will show conflict.
 - **Interactive Editing**:
   - Click on a routine cell to open a popup for editing
-- **Routine Export**:
-  - Export full routine as **PDF**
+- **Routine Export (Download)**:
+  - Export full routine as **PDF** upon clicking download button
+- **Print Routine**:
+  - Full Routine can be printed upon clicking Print Routine button
 - **Seniority Sorting**:
-  - Routines sorted in order: 4th year → 3rd → 2nd → 1st
+  - Whenever a new batch entry is given, routine sorts in order: 4th year → 3rd year→ 2nd → 1st
 
 ---
 
@@ -56,7 +69,7 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 - Minimize room/teacher conflicts
 - Simplify schedule updates and modifications
 - Enable efficient classroom/lab utilization
-- Deploy a scalable and user-friendly application
+- Deploying a scalable and user-friendly application
 
 ---
 

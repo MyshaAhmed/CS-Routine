@@ -81,3 +81,12 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 
 ![Dynamic Routine](./assets/cs_routine.png)
 
+---
+
+## ✍️ Created By
+
+**Mysha Ahmed**
+- CSE'20
+- Department of Computer Science & Engineering
+**Rajshahi University of Engineering & Technology (RUET)**
+

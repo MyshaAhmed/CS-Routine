@@ -96,6 +96,23 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 
 ---
 
+## 🔧 Future Enhancements
+Features I plan to integrate in the future:
+- **Secure Login / Authentication System** to manage access for admins, teachers, and students.
+- **Delete Cell Feature**: will allow admins to easily delete individual schedule entries directly from the routine interface.
+- The current app is built only for admins, I plan to create :
+  - **Dedicated Teacher Dashboard**:  
+    Provide a separate interface for teachers to:
+    - Request available time slots for class tests (CT) or extra class.
+    - View their personalized teaching schedules
+  
+  - **Student Portal**:  
+    Enable a student-friendly view where students can:
+    - Access the most up-to-date routine
+    - Export or print schedules easily
+
+---
+
 ## ✍️ Created By
 
 **Mysha Ahmed**

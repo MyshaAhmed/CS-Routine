@@ -76,7 +76,7 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 ## ✅ Outcomes
 - 📉 Reduced manual routine creation errors
 - 📈 Increased efficiency and room utilization
-- 🧠 Smart conflict resolution
+- 🧠 Smart teacher & room conflict resolution
 - 🎯 Flexible scheduling with minimal errors
 - 🖱️ Seamless UI/UX for admins
 

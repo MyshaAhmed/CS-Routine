@@ -1,6 +1,7 @@
+// src/components/EditPopup.jsx
 import React, { useState, useEffect } from 'react';
 
-const EditPopup = ({ cellData, onClose, onSave }) => {
+const EditPopup = ({ cellData, onClose, onSave, onDelete }) => {
   const [inputs, setInputs] = useState({ code: '', teachers: [''], rooms: [''] });
   const [errors, setErrors] = useState([]);
 
@@ -140,6 +141,12 @@ const EditPopup = ({ cellData, onClose, onSave }) => {
           rooms: inputs.rooms.map(r => r.trim()).filter(r => r)
         }
       });
+    }
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Do you want to delete this cell data?')) {
+      onDelete();
     }
   };
 
@@ -284,34 +291,52 @@ const EditPopup = ({ cellData, onClose, onSave }) => {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button
-            type="submit"
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#2b4d37',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Cancel
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+          {cellData?.content && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#ff4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Delete Cell
+            </button>
+          )}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#f0f0f0',
+                color: '#333',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#2b4d37',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </form>
     </div>

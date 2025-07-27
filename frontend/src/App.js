@@ -9,7 +9,7 @@ import api from './services/api';
 import './styles/main.css';
 
 function App() {
-  const [days] = useState(['sat', 'sun', 'mon', 'tue', 'wed']);
+  const [days] = useState(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday']);
   const [batches, setBatches] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [selectedCell, setSelectedCell] = useState(null);

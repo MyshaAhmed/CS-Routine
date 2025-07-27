@@ -60,8 +60,12 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
 
   return (
     <div className={`table-${day}`}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE </h1>
+      <div style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE </h1> */}
+        
+        <h5 style={{ color: '#2b4d37', marginTop: 15, marginBottom:2 }}>Rajshahi University of Engineering & Technology</h5>
+        <h6 style={{ color: '#2b4d37', margin: 2 }}>Department of Computer Science & Engineering</h6>
+        <h6 style={{ color: '#2b4d37', margin: 2 }}>Class Routine( Effective form x Month, year) (Start with Saturday)</h6>
       </div>
 
       <table className="dynamicTable">
@@ -87,7 +91,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
           <tr>
             <td id="highlight">DAY →</td>
             <td colSpan="9" style={{ textAlign: 'center' }}>
-              {day.charAt(0).toUpperCase() + day.slice(1).toUpperCase()}
+              {day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()}
             </td>
           </tr>
           

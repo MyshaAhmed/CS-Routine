@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# 📅 RUET Routine Management System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application for automating and managing class schedules at **Rajshahi University of Engineering & Technology (RUET)**. This project modernizes the traditional, manual routine creation process by introducing an interactive, dynamic, and conflict-aware web-based platform.
 
-## Available Scripts
+![Reference Routine](./assets/ruet.png)  
+*Official Routine Reference*
 
-In the project directory, you can run:
+![Dynamic Routine](./assets/cs_routine.png)  
+*Web-based Generated Routine*
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🚀 Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 📚 Routine Structure & Constraints
+- **Batches & Sections**: Supports all 4 academic years with Sections A, B, and C.
+- **Room & Lab Management**:
+  - 7 Classrooms: `101`, `102`, `103`, `104`, `201`, `202`, `203`
+  - 8 Labs: `HPCL`, `PG Lab`, `OS Lab`, `NW Lab`, `SW Lab`, `HW Lab`, `ACL`, `Mobile Apps Lab`
+  - Labs have a max capacity of **30 students**
+- **Time Constraints**:
+  - Weekends: **Thursday & Friday** off
+  - Breaks: `10:30 AM – 10:50 AM` and `1:20 PM – 2:30 PM`
+  - Courses: 5 theory + multiple lab sessions (1.5 or 0.75 credit)
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### ⚙️ Dynamic Routine Management
+- **Auto Batch Setup**: Adding a batch auto-generates rows for its 3 sections
+- **Real-time Conflict Detection**:
+  - Duplicate teachers or rooms flagged in a **"Duplicates"** column
+- **Teacher Constraints**:
+  - A single teacher can take max 2 classes a day per section, must be **adjacent periods**
+- **Interactive Editing**:
+  - Click on a routine cell to open a popup for editing
+- **Routine Export**:
+  - Export full routine as **PDF**
+- **Seniority Sorting**:
+  - Routines sorted in order: 4th year → 3rd → 2nd → 1st
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🛠️ Tech Stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+| Layer       | Tech                     |
+|-------------|--------------------------|
+| Frontend    | React.js, JavaScript     |
+| Backend     | Node.js, Express.js      |
+| Database    | MongoDB (NoSQL)          |
+| Deployment  | Microsoft Azure (Cloud)  |
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 🎯 Project Objectives
+- Eliminate manual routine creation errors
+- Minimize room/teacher conflicts
+- Simplify schedule updates and modifications
+- Enable efficient classroom/lab utilization
+- Deploy a scalable and user-friendly application
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## ✅ Outcomes
+- 📉 Reduced manual routine creation errors
+- 📈 Increased efficiency and room utilization
+- 🧠 Smart conflict resolution
+- 🎯 Flexible scheduling with minimal errors
+- 🖱️ Seamless UI/UX for admins
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 📸 Screenshots
 
-## Learn More
+### 🗂 Reference Routine (Manual System)
+> Screenshot of official RUET routine used for design reference.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+![Reference Routine](./assets/ruet.png)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 📊 Generated Routine (Web-Based System)
+> Dynamically created routine with real-time editing, conflict management, and slot visualization.
 
-### Code Splitting
+![Dynamic Routine](./assets/cs_routine.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

@@ -344,8 +344,8 @@ function App() {
       },
       jsPDF: { 
         unit: 'mm', 
-        format: 'a2', 
-        orientation: 'portrait' 
+        format: 'a3', 
+        orientation: 'landscape' 
       },
       pagebreak: { 
         mode: ['avoid-all', 'css', 'legacy'] 

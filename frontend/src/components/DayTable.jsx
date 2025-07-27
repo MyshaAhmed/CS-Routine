@@ -61,7 +61,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
   return (
     <div className={`table-${day}`}>
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE - {day.toUpperCase()}</h1>
+        <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE </h1>
       </div>
 
       <table className="dynamicTable">

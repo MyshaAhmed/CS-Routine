@@ -8,7 +8,7 @@ body {
 
 /* Screen Styles */
 .table-container {
-  width: 100%;
+  width: 97%;
   max-width: 1600px;
   margin: 20px auto;
   padding: 15px;
@@ -57,7 +57,7 @@ th {
     box-sizing: border-box !important;
   }
   .table-container {
-      width: 100% !important;
+      width: 97% !important;
       margin: 0 !important;
       padding: 10px !important;
       box-shadow: none !important;

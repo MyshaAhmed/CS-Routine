@@ -36,12 +36,13 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     const schedule = getMapOrObject(batch.schedule, day, section, period);
     const conflict = getMapOrObject(batch.conflicts, day, section, period);
 
-    // Handle conflict cells
+    // Handle conflict cells - MODIFIED to show user entry
     if (conflict) {
       return {
-        content: `CONFLICT\nT: ${conflict.teachers.join(', ')}\nR: ${conflict.rooms.join(', ')}`,
+        content: `${conflict.code}\n${conflict.teachers.join('/')}\n${conflict.rooms.join('/')}`,
         className: 'conflict-cell',
-        colSpan: 1
+        colSpan: 1,
+        conflictData: conflict  // Add conflict data
       };
     }
 
@@ -114,33 +115,35 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                       }
 
                       const currentPeriod = periodIdx + 1;
-                      const { content, className, colSpan } = getCellContent(batch, section, currentPeriod);
+                      const cell = getCellContent(batch, section, currentPeriod);
 
-                      if (colSpan === 1 && className.includes('sessional-cell')) {
+                      if (cell.colSpan === 1 && cell.className.includes('sessional-cell')) {
                         continue;
                       }
 
                       cells.push(
                         <td
                           key={periodIdx}
-                          colSpan={colSpan}
-                          className={className}
+                          colSpan={cell.colSpan}
+                          className={cell.className}
                           onClick={() => onCellClick({
                             day,
                             period: currentPeriod,
                             batchId: batch._id || batch.id,
                             section,
-                            content: batch.schedule?.[day]?.[section]?.[currentPeriod]
+                            content: cell.conflictData || 
+                                     (batch.schedule?.[day]?.[section]?.[currentPeriod] || null),
+                            isConflict: !!cell.conflictData  // Add conflict flag
                           })}
                         >
-                          {content.split('\n').map((line, i) => (
+                          {cell.content.split('\n').map((line, i) => (
                             <div key={i}>{line}</div>
                           ))}
                         </td>
                       );
 
-                      if (colSpan > 1) {
-                        skip = colSpan - 1;
+                      if (cell.colSpan > 1) {
+                        skip = cell.colSpan - 1;
                       }
                     }
                     return cells;

@@ -37,6 +37,26 @@ const api = {
     }
   },
 
+  fetchTeachers: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/teachers`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+      throw error;
+    }
+  },
+
+  createTeacher: async (teacherData) => {
+    try {
+      const response = await axios.post(`${API_URL}/teachers`, teacherData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating teacher:', error);
+      throw error;
+    }
+  },
+
   // Delete a batch
   deleteBatch: async (id) => {
     try {
@@ -46,7 +66,19 @@ const api = {
       console.error(`Error deleting batch ${id}:`, error);
       throw error;
     }
+  },
+
+  // delete teacher method
+  deleteTeacher: async (id) => {
+    try {
+      const response = await axios.delete(`${API_URL}/teachers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting teacher:', error);
+      throw error;
+    }
   }
+
 };
 
 export default api;

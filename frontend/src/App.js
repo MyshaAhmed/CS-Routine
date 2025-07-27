@@ -1,8 +1,8 @@
-// src/App.js
 import { useState, useRef, useEffect } from 'react';
 import DayTable from './components/DayTable';
 import BatchPopup from './components/BatchPopup';
 import EditPopup from './components/EditPopup';
+import TeacherManagerPopup from './components/TeacherManagerPopup';
 import PrintControls from './components/PrintControls';
 import html2pdf from 'html2pdf.js';
 import api from './services/api';
@@ -11,29 +11,37 @@ import './styles/main.css';
 function App() {
   const [days] = useState(['sat', 'sun', 'mon', 'tue', 'wed']);
   const [batches, setBatches] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [selectedCell, setSelectedCell] = useState(null);
   const [showBatchPopup, setShowBatchPopup] = useState(false);
+  const [showTeacherPopup, setShowTeacherPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const tableContainerRef = useRef(null);
 
+  // Fetch batches and teachers on component mount
   useEffect(() => {
-    const fetchBatches = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await api.fetchBatches();
-        setBatches(data);
+        const [batchData, teacherData] = await Promise.all([
+          api.fetchBatches(),
+          api.fetchTeachers()
+        ]);
+        setBatches(batchData);
+        setTeachers(teacherData);
       } catch (error) {
-        console.error('Failed to fetch batches:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBatches();
+    fetchData();
   }, []);
 
+  // Add new batch
   const addBatch = async (batchData) => {
     try {
       const newBatch = {
@@ -67,6 +75,7 @@ function App() {
     }
   };
 
+  // Delete batch
   const handleDeleteBatch = async (batchId) => {
     if (window.confirm('Delete this batch from all days?')) {
       try {
@@ -79,6 +88,7 @@ function App() {
     }
   };
 
+  // Handle cell click in timetable
   const handleCellClick = (cellInfo) => {
     const teacherSchedule = {};
     const occupiedRooms = {};
@@ -91,23 +101,38 @@ function App() {
         Object.entries(periodsObj).forEach(([period, data]) => {
           if (!data) return;
           
+          // Determine if it's a lecture or lab
+          const codeValue = parseInt(data.code);
+          const type = !isNaN(codeValue) && codeValue % 2 === 0 ? 'lab' : 'lecture';
+          
           data.teachers?.forEach(teacher => {
             teacherSchedule[teacher] = teacherSchedule[teacher] || {};
             teacherSchedule[teacher][section] = teacherSchedule[teacher][section] || [];
-            teacherSchedule[teacher][section].push(parseInt(period));
+            
+            // Store period with type
+            teacherSchedule[teacher][section].push({
+              period: parseInt(period),
+              type
+            });
           });
         });
       });
     });
 
+    // Find batch for year/semester info
+    const batch = batches.find(b => b._id === cellInfo.batchId);
+    
     setSelectedCell({
       ...cellInfo,
       teacherSchedule,
-      occupiedRooms
+      occupiedRooms,
+      batchYear: batch?.year,
+      batchSemester: batch?.semester
     });
     setShowEditPopup(true);
   };
 
+  // Save cell data
   const handleSaveCell = async (cellInfo, newData) => {
     const batchToUpdate = batches.find(batch => batch._id === cellInfo.batchId);
     
@@ -118,7 +143,7 @@ function App() {
 
     const updatedBatch = JSON.parse(JSON.stringify(batchToUpdate));
 
-    const codeValue = parseInt(newData.code.split(' ').pop());
+    const codeValue = parseInt(newData.code);
     const isSessional = !isNaN(codeValue) && codeValue % 2 === 0;
     const validSessionalPeriods = [1, 4, 7];
     
@@ -196,6 +221,7 @@ function App() {
     setShowEditPopup(false);
   };
 
+  // Update schedule data
   const updateSchedule = (batch, cellInfo, newData, isSessional) => {
     const periods = isSessional ? 
       [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
@@ -220,6 +246,7 @@ function App() {
     return { ...batch, schedule: newSchedule };
   };
 
+  // Handle conflicts
   const handleConflicts = (batch, cellInfo, newData, conflicts) => {
     const newConflicts = JSON.parse(JSON.stringify(batch.conflicts));
     const conflictEntry = {
@@ -244,7 +271,7 @@ function App() {
     return { ...batch, conflicts: newConflicts };
   };
 
-  // NEW: Handle cell deletion
+  // Delete cell data
   const handleDeleteCell = async (cellInfo) => {
     try {
       const batchToUpdate = batches.find(batch => batch._id === cellInfo.batchId);
@@ -277,8 +304,8 @@ function App() {
       
       // Update state
       setBatches(prev => 
-        prev.map(batch => batch._id === savedBatch._id ? savedBatch : batch)
-      );
+        prev.map(batch => batch._id === savedBatch._id ? savedBatch : batch
+      ));
       
       return true;
     } catch (error) {
@@ -288,6 +315,7 @@ function App() {
     }
   };
 
+  // Print routine
   const handlePrint = () => {
     const elementsToHide = document.querySelectorAll('.no-print');
     elementsToHide.forEach(el => el.style.display = 'none');
@@ -295,6 +323,7 @@ function App() {
     elementsToHide.forEach(el => el.style.display = '');
   };
 
+  // Download PDF - A4 compatible version
   const handleDownloadPDF = () => {
     const elementsToHide = document.querySelectorAll('.no-print');
     elementsToHide.forEach(el => { 
@@ -316,7 +345,7 @@ function App() {
       jsPDF: { 
         unit: 'mm', 
         format: 'a2', 
-        orientation: 'landscape' 
+        orientation: 'portrait' 
       },
       pagebreak: { 
         mode: ['avoid-all', 'css', 'legacy'] 
@@ -332,6 +361,30 @@ function App() {
           el.style.display = ''; 
         });
       });
+  };
+
+  // Add teacher
+  const addTeacher = async (teacherData) => {
+    try {
+      const savedTeacher = await api.createTeacher(teacherData);
+      setTeachers(prev => [...prev, savedTeacher]);
+    } catch (error) {
+      console.error('Error adding teacher:', error);
+      alert('Failed to add teacher. Please try again.');
+    }
+  };
+
+  // Delete teacher
+  const deleteTeacher = async (id) => {
+    try {
+      await api.deleteTeacher(id);
+      setTeachers(prev => prev.filter(teacher => teacher._id !== id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting teacher:', error);
+      alert('Failed to delete teacher. Please try again.');
+      return false;
+    }
   };
 
   return (
@@ -358,6 +411,7 @@ function App() {
         onAddBatch={() => setShowBatchPopup(true)}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
+        onAddTeacher={() => setShowTeacherPopup(true)}
       />
 
       {loading ? (
@@ -386,6 +440,15 @@ function App() {
         />
       )}
 
+      {showTeacherPopup && (
+        <TeacherManagerPopup
+          teachers={teachers}
+          onAdd={addTeacher}
+          onDelete={deleteTeacher}
+          onClose={() => setShowTeacherPopup(false)}
+        />
+      )}
+
       {showEditPopup && (
         <EditPopup
           cellData={selectedCell}
@@ -399,6 +462,9 @@ function App() {
             const success = await handleDeleteCell(selectedCell);
             if (success) setShowEditPopup(false);
           }}
+          teachers={teachers}
+          batchYear={selectedCell?.batchYear}
+          batchSemester={selectedCell?.batchSemester}
         />
       )}
     </div>

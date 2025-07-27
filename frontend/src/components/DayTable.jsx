@@ -90,6 +90,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
               {day.charAt(0).toUpperCase() + day.slice(1).toUpperCase()}
             </td>
           </tr>
+          
         </thead>
 
         <tbody>
@@ -164,7 +165,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
 
                   {/* Delete Button (only on first row) */}
                   {i === 0 && (
-                    <td className="no-print">
+                    <td className="no-print" rowSpan="3">
                       <button 
                         onClick={() => onDeleteBatch(batch._id || batch.id)}
                         style={{ 

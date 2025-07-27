@@ -18,6 +18,8 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
   - 7 Classrooms: `101`, `102`, `103`, `104`, `201`, `202`, `203`
   - 8 Labs: `HPCL`, `PG Lab`, `OS Lab`, `NW Lab`, `SW Lab`, `HW Lab`, `ACL`, `Mobile Apps Lab`
   - Labs have a max capacity of **30 students**
+  - Labs can be held only on the 1st, 4th and 7th period**
+
 - **Time Constraints**:
   - Weekends: **Thursday & Friday** off
   - Breaks: `10:30 AM – 10:50 AM` and `1:20 PM – 2:30 PM`
@@ -25,13 +27,15 @@ A **full-stack MERN** (MongoDB, Express.js, React.js, Node.js) web application f
 
 
 ### ⚙️ Dynamic Routine Management
+>Routine Features:
+![Dynamic Routine](./assets/feature.png)
 - **Add Batch Button**:
    - Adding a batch auto-generates rows for its 3 sections. Means adding a single batch will create a row for 3 sections (A,B and C)
 - **Delete Batch Button**:
    - Deletes that particular batch from all days (SAT-WED).
 - **Edit Cell**:
    - When a single cell is clicked, an EditCell popup will show, where we can edit and add cell information like course code, teacher's name, room/lab and also add more teachers taking a single course.
-   - "To clear information of a cell we need to manually clear the edit cell data and reenter new cell data, as delete cell feature is not yet implemented."
+   - Delete Cell button clears out cell data.
 - **Real-time Conflict Detection**:
   - Duplicate teachers or rooms flagged in a **"Duplicates"** column
   - Duplicate input of a teacher or if the classes overlap at different rooms and sections, if such entry is given, it will show conflict

@@ -366,7 +366,7 @@ const EditPopup = ({
               type="button"
               onClick={handleDelete}
               style={{
-                padding: '12px 20px',
+                padding: '12px 10px',
                 backgroundColor: '#ff4444',
                 color: 'white',
                 border: 'none',

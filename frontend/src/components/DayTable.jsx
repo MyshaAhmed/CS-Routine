@@ -65,7 +65,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
         
         <h5 style={{ color: '#2b4d37', marginTop: 15, marginBottom:2 }}>Rajshahi University of Engineering & Technology</h5>
         <h6 style={{ color: '#2b4d37', margin: 2 }}>Department of Computer Science & Engineering</h6>
-        <h6 style={{ color: '#2b4d37', margin: 2 }}>Class Routine( Effective form x Month, year) (Start with Saturday)</h6>
+        <h6 style={{ color: '#2b4d37', margin: 2 }}>Class Routine( Effective form 21 June, 2025) (Start with Saturday)</h6>
       </div>
 
       <table className="dynamicTable">

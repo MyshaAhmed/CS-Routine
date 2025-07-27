@@ -14,7 +14,7 @@ const EditPopup = ({
   const [courseCodes, setCourseCodes] = useState([]);
 
   // Fixed room options
-  const roomOptions = ['101', '102', '103', '104', '201', '202', '203','HPCL','PG Lab','OS Lab','NW Lab','SW Lab','HW Lab','ACL','Mobile Apps Lab'];
+  const roomOptions = ['101', '102', '103', '104', '201', '202', '203','HPCL Lab','PG Lab','OS Lab','NW Lab','SW Lab','HW Lab','ACL Lab','Mobile Apps Lab'];
   
   // Generate course codes based on year and semester
   useEffect(() => {

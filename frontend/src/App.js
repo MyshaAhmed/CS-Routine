@@ -344,7 +344,7 @@ function App() {
       },
       jsPDF: { 
         unit: 'mm', 
-        format: 'a3', 
+        format: 'a2', 
         orientation: 'landscape' 
       },
       pagebreak: { 

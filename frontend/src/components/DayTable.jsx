@@ -12,6 +12,14 @@ const timeSlots = [
   '4:10 - 5:00 PM'
 ];
 
+// Format teachers with parentheses for multiple instructors
+const formatTeachers = (teachers) => {
+  return teachers
+    .filter(t => t)
+    .map(t => t.includes('/') ? `(${t})` : t)
+    .join('/');
+};
+
 const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
   // Sort batches by year and semester
   const sortedBatches = [...batches].sort((a, b) => {
@@ -36,13 +44,13 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     const schedule = getMapOrObject(batch.schedule, day, section, period);
     const conflict = getMapOrObject(batch.conflicts, day, section, period);
 
-    // Handle conflict cells - MODIFIED to show user entry
+    // Handle conflict cells
     if (conflict) {
       return {
-        content: `${conflict.code}\n${conflict.teachers.join('/')}\n${conflict.rooms.join('/')}`,
+        content: `${conflict.code}\n${formatTeachers(conflict.teachers)}\n${conflict.rooms.join('/')}`,
         className: 'conflict-cell',
         colSpan: 1,
-        conflictData: conflict  // Add conflict data
+        conflictData: conflict
       };
     }
 
@@ -52,7 +60,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     // Handle sessional courses
     const isSessionalStart = schedule.isSessional && schedule.startPeriod === period;
     return {
-      content: `${schedule.code}\n${schedule.teachers.join('/')}\n${schedule.rooms.join('/')}`,
+      content: `${schedule.code}\n${formatTeachers(schedule.teachers)}\n${schedule.rooms.join('/')}`,
       className: isSessionalStart ? 'sessional-cell' : '',
       colSpan: isSessionalStart ? 3 : 1
     };
@@ -61,8 +69,6 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
   return (
     <div className={`table-${day}`}>
       <div style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'center' }}>
-        {/* <h1 style={{ color: '#2b4d37' }}>CLASS ROUTINE </h1> */}
-        
         <h5 style={{ color: '#2b4d37', marginTop: 15, marginBottom:2 }}>Rajshahi University of Engineering & Technology</h5>
         <h6 style={{ color: '#2b4d37', margin: 2 }}>Department of Computer Science & Engineering</h6>
         <h6 style={{ color: '#2b4d37', margin: 2 }}>Class Routine( Effective form 21 June, 2025) (Start with Saturday)</h6>
@@ -131,15 +137,26 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                           key={periodIdx}
                           colSpan={cell.colSpan}
                           className={cell.className}
-                          onClick={() => onCellClick({
-                            day,
-                            period: currentPeriod,
-                            batchId: batch._id || batch.id,
-                            section,
-                            content: cell.conflictData || 
-                                     (batch.schedule?.[day]?.[section]?.[currentPeriod] || null),
-                            isConflict: !!cell.conflictData  // Add conflict flag
-                          })}
+                          onClick={() => {
+                            const content = cell.conflictData || 
+                                          (batch.schedule?.[day]?.[section]?.[currentPeriod] || null);
+                            
+                            // Create string representation for EditPopup
+                            const contentString = content ? 
+                              `${content.code}\n${content.teachers.join('/')}\n${content.rooms.join('/')}` : 
+                              '';
+                            
+                            onCellClick({
+                              day,
+                              period: currentPeriod,
+                              batchId: batch._id || batch.id,
+                              section,
+                              content: contentString,
+                              isConflict: !!cell.conflictData,
+                              // Pass original object for validation
+                              contentObject: content
+                            });
+                          }}
                         >
                           {cell.content.split('\n').map((line, i) => (
                             <div key={i}>{line}</div>
@@ -160,7 +177,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                       Object.entries(batch.conflicts[day][section]).map(([periodKey, conflict], i) => (
                         <div key={i} style={{ fontSize: '0.8em', lineHeight: '1.2' }}>
                           Code:{conflict.code}, Period: {conflict.originalPeriod}<br/>
-                          Teacher Conflict: {conflict.teachers?.join(', ') || 'None'}<br/>
+                          Teacher Conflict: {formatTeachers(conflict.teachers)}<br/>
                           Room Conflict: {conflict.rooms?.join(', ') || 'None'}
                         </div>
                       )) : null

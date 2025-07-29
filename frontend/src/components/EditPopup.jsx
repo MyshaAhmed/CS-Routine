@@ -9,7 +9,9 @@ const EditPopup = ({
   batchYear,
   batchSemester
 }) => {
-  const [inputs, setInputs] = useState({ code: '', teachers: [''], rooms: [''] });
+  const [inputs, setInputs] = useState({ 
+    courses: [{ code: '', teachers: [''], rooms: [''] }] 
+  });
   const [errors, setErrors] = useState([]);
   const [courseCodes, setCourseCodes] = useState([]);
 
@@ -32,149 +34,218 @@ const EditPopup = ({
   }, [batchYear, batchSemester]);
 
   useEffect(() => {
-    if (cellData?.content) {
-      setInputs({
-        code: cellData.content.code || '',
-        teachers: cellData.content.teachers || [''],
-        rooms: cellData.content.rooms || ['']
-      });
+  if (cellData?.content) {
+    // Check if content is a string (old format) or object (new format)
+    if (typeof cellData.content === 'string') {
+      // Parse string format
+      const lines = cellData.content.split('\n');
+      const codeLine = lines[0] || '';
+      const teacherLine = lines[1] || '';
+      const roomLine = lines[2] || '';
+      
+      const codes = codeLine.split('/');
+      const teacherGroups = teacherLine.split('/').map(group => 
+        group.replace(/[()]/g, '').split('/').filter(t => t)
+      );
+      const rooms = roomLine.split('/');
+      
+      const courses = codes.map((code, i) => ({
+        code: code.trim(),
+        teachers: teacherGroups[i] || [''],
+        rooms: rooms[i] ? [rooms[i].trim()] : ['']
+      }));
+      
+      setInputs({ courses });
     } else {
-      setInputs({ code: '', teachers: [''], rooms: [''] });
+      // Handle object format
+      setInputs({
+        courses: [{
+          code: cellData.content.code || '',
+          teachers: cellData.content.teachers || [''],
+          rooms: cellData.content.rooms || ['']
+        }]
+      });
     }
-  }, [cellData]);
+  } else {
+    setInputs({ courses: [{ code: '', teachers: [''], rooms: [''] }] });
+  }
+}, [cellData]);
 
   const validateInputs = () => {
     const newErrors = [];
     const currentPeriod = cellData?.period;
     const currentSection = cellData?.section;
-    const codeValue = parseInt(inputs.code);
-    const isEvenCode = !isNaN(codeValue) && codeValue % 2 === 0;
-    const isLab = isEvenCode;
-    const isLecture = !isLab;
+    const isLabPeriod = [1, 4, 7].includes(currentPeriod);
 
-    // Sessional Course Validation
-    if (isLab) {
-      const validSessionalPeriods = [1, 4, 7];
-      if (!validSessionalPeriods.includes(currentPeriod)) {
-        newErrors.push('Sessional courses (labs) must start at 1st, 4th, or 7th period');
-      }
-    }
-
-    // Course Code Validation
-    if (!inputs.code.trim()) {
-      newErrors.push('Course code is required');
-    } else if (isNaN(codeValue)) {
-      newErrors.push('Course code must be a numeric value');
-    } else if (!courseCodes.includes(inputs.code)) {
-      newErrors.push('Invalid course code for this batch');
-    }
-
-    // Teacher Validation
-    const validTeachers = inputs.teachers
-      .map(t => t.trim())
-      .filter(t => t !== '');
-
-    if (validTeachers.length === 0) {
-      newErrors.push(`A teacher can't have more than 2 lectures in ${currentSection}`);
-    }
-
-    // Teacher Constraints
-    validTeachers.forEach(teacher => {
-      const teacherSchedule = cellData.teacherSchedule[teacher] || {};
+    // Course Validation
+    inputs.courses.forEach((course, index) => {
+      const codeValue = parseInt(course.code);
+      const isLabCourse = !isNaN(codeValue) && codeValue % 2 === 0;
       
-      // Current Section Constraints
-      const currentSectionSchedule = teacherSchedule[currentSection] || [];
-      
-      // Filter lectures and get periods
-      const lecturePeriods = currentSectionSchedule
-        .filter(item => item.type === 'lecture')
-        .map(item => item.period);
-      
-      // For lectures (odd codes): apply max 2 classes and adjacency constraints
-      if (isLecture) {
-        const proposedLecturePeriods = [...lecturePeriods, currentPeriod];
-        
-        // Max 2 lectures in current section
-        if (proposedLecturePeriods.length > 2) {
-          newErrors.push(`${teacher} can't have more than 2 lectures in ${currentSection}`);
-        }
-        
-        // Consecutive periods if 2 lectures in same section
-        if (proposedLecturePeriods.length === 2) {
-          const sorted = proposedLecturePeriods.sort((a, b) => a - b);
-          if (Math.abs(sorted[0] - sorted[1]) !== 1) {
-            newErrors.push(`${teacher}'s lectures in ${currentSection} must be consecutive`);
-          }
-        }
+      // Course Code Validation
+      if (!course.code.trim()) {
+        newErrors.push(`Course ${index+1}: Code is required`);
+      } else if (isNaN(codeValue)) {
+        newErrors.push(`Course ${index+1}: Code must be numeric`);
+      } else if (!courseCodes.includes(course.code)) {
+        newErrors.push(`Course ${index+1}: Invalid course code`);
       }
       
-      // For all types: check period conflicts across sections
-      Object.entries(teacherSchedule).forEach(([section, scheduleItems]) => {
-        if (section !== currentSection) {
-          const hasConflict = scheduleItems.some(item => item.period === currentPeriod);
-          if (hasConflict) {
-            // Using alert as before
-            alert(`${teacher} is already teaching in ${section} at this time`);
+      // Lab Course Validation
+      if (isLabPeriod && !isLabCourse) {
+        newErrors.push(`Course ${index+1}: Lab period requires sessional course (even code)`);
+      } else if (!isLabPeriod && isLabCourse) {
+        newErrors.push(`Course ${index+1}: Sessional courses only allowed in lab periods (1,4,7)`);
+      }
+
+      // Teacher Validation
+      const validTeachers = course.teachers
+        .map(t => t.trim())
+        .filter(t => t !== '');
+
+      if (validTeachers.length === 0) {
+        newErrors.push(`Course ${index+1}: At least one teacher required`);
+      }
+
+      // Teacher Constraints
+      validTeachers.forEach(teacher => {
+        const teacherSchedule = cellData.contentObject?.teacherSchedule || {}[teacher] || {};
+        const currentSectionSchedule = teacherSchedule[currentSection] || [];
+        
+        // Filter lectures and get periods
+        const lecturePeriods = currentSectionSchedule
+          .filter(item => item.type === 'lecture')
+          .map(item => item.period);
+        
+        // For lectures: apply max 2 classes and adjacency constraints
+        if (!isLabCourse) {
+          const proposedLecturePeriods = [...lecturePeriods, currentPeriod];
+          
+          // Max 2 lectures in current section
+          if (proposedLecturePeriods.length > 2) {
+            newErrors.push(`${teacher} can't have more than 2 lectures in ${currentSection}`);
           }
+          
+          // Consecutive periods if 2 lectures in same section
+          if (proposedLecturePeriods.length === 2) {
+            const sorted = proposedLecturePeriods.sort((a, b) => a - b);
+            if (Math.abs(sorted[0] - sorted[1]) !== 1) {
+              newErrors.push(`${teacher}'s lectures in ${currentSection} must be consecutive`);
+            }
+          }
+        }
+        
+        // Period conflicts across sections
+        Object.entries(teacherSchedule).forEach(([section, scheduleItems]) => {
+          if (section !== currentSection) {
+            const hasConflict = scheduleItems.some(item => item.period === currentPeriod);
+            if (hasConflict) {
+              alert(`${teacher} is already teaching in ${section} at this time`);
+            }
+          }
+        });
+      });
+
+      // Room Validation
+      const validRooms = course.rooms
+        .map(r => r.trim())
+        .filter(r => r !== '');
+
+      if (validRooms.length === 0) {
+        newErrors.push(`Course ${index+1}: At least one room required`);
+      } else if (validRooms.some(room => !roomOptions.includes(room))) {
+        newErrors.push(`Course ${index+1}: Invalid room selected`);
+      }
+
+      // Room Availability Check
+      validRooms.forEach(room => {
+        if (cellData.contentObject?.occupiedRooms || {}[currentPeriod]?.includes(room)) {
+          newErrors.push(`${room} is occupied in period ${currentPeriod}`);
         }
       });
-    });
-
-    // Room Validation
-    const validRooms = inputs.rooms
-      .map(r => r.trim())
-      .filter(r => r !== '');
-
-    if (validRooms.length === 0) {
-      newErrors.push('At least one room is required');
-    } else if (validRooms.some(room => !roomOptions.includes(room))) {
-      newErrors.push('Invalid room selected');
-    }
-
-    // Room Availability Check
-    validRooms.forEach(room => {
-      if (cellData.occupiedRooms[currentPeriod]?.includes(room)) {
-        newErrors.push(`${room} is already occupied in period ${currentPeriod}`);
-      }
     });
 
     setErrors(newErrors);
     return newErrors.length === 0;
   };
 
-  const handleChange = (type, index, value) => {
+  const handleCourseChange = (courseIndex, field, value) => {
     setInputs(prev => ({
-      ...prev,
-      [type]: prev[type].map((item, i) => 
-        i === index ? value : item
+      courses: prev.courses.map((course, i) => 
+        i === courseIndex ? { ...course, [field]: value } : course
       )
     }));
   };
 
-  const addField = (type) => {
+  const handleFieldChange = (courseIndex, field, fieldIndex, value) => {
     setInputs(prev => ({
-      ...prev,
-      [type]: [...prev[type], '']
+      courses: prev.courses.map((course, i) => 
+        i === courseIndex ? {
+          ...course, 
+          [field]: course[field].map((item, j) => 
+            j === fieldIndex ? value : item
+          )
+        } : course
+      )
     }));
   };
 
-  const removeField = (type, index) => {
-    if (inputs[type].length > 1) {
+  const addCourse = () => {
+    setInputs(prev => ({
+      courses: [...prev.courses, { code: '', teachers: [''], rooms: [''] }]
+    }));
+  };
+
+  const removeCourse = (index) => {
+    if (inputs.courses.length > 1) {
       setInputs(prev => ({
-        ...prev,
-        [type]: prev[type].filter((_, i) => i !== index)
+        courses: prev.courses.filter((_, i) => i !== index)
       }));
     }
+  };
+
+  const addField = (courseIndex, field) => {
+    setInputs(prev => ({
+      courses: prev.courses.map((course, i) => 
+        i === courseIndex ? {
+          ...course, 
+          [field]: [...course[field], '']
+        } : course
+      )
+    }));
+  };
+
+  const removeField = (courseIndex, field, fieldIndex) => {
+    setInputs(prev => ({
+      courses: prev.courses.map((course, i) => 
+        i === courseIndex ? {
+          ...course, 
+          [field]: course[field].filter((_, j) => j !== fieldIndex)
+        } : course
+      )
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateInputs()) {
+      // Format data for saving
+      const codeLine = inputs.courses.map(c => c.code).join('/');
+      
+      const teacherLine = inputs.courses.map(course => {
+        const teachers = course.teachers.filter(t => t.trim());
+        return teachers.length > 1 ? `(${teachers.join('/')})` : teachers[0] || '';
+      }).join('/');
+      
+      const roomLine = inputs.courses.map(course => 
+        course.rooms.filter(r => r.trim()).join('/')
+      ).join('/');
+      
       onSave({
         validData: {
-          code: inputs.code.trim(),
-          teachers: inputs.teachers.map(t => t.trim()).filter(t => t),
-          rooms: inputs.rooms.map(r => r.trim()).filter(r => r)
+          code: codeLine,
+          teachers: inputs.courses.flatMap(c => c.teachers.filter(t => t.trim())),
+          rooms: inputs.courses.flatMap(c => c.rooms.filter(r => r.trim()))
         }
       });
     }
@@ -186,6 +257,8 @@ const EditPopup = ({
     }
   };
 
+  const isLabPeriod = [1, 4, 7].includes(cellData?.period);
+
   return (
     <div className="popup" style={{ 
       padding: '20px',
@@ -193,7 +266,9 @@ const EditPopup = ({
       borderRadius: '8px',
       backgroundColor: 'white',
       maxWidth: '500px',
-      zIndex: 1000
+      zIndex: 1000,
+      maxHeight: '90vh',
+      overflowY: 'auto'
     }}>
       <h3>Edit Period {cellData?.period}</h3>
       
@@ -215,150 +290,201 @@ const EditPopup = ({
       )}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>
-            Course Code:
-            <select
-              value={inputs.code}
-              onChange={e => setInputs(prev => ({ ...prev, code: e.target.value }))}
-              style={{
-                width: '100%',
-                marginTop: '5px',
-                padding: '10px',
-                border: errors.some(e => e.includes('Course code')) 
-                  ? '2px solid red' 
-                  : '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: '#f9f9f9'
-              }}
-            >
-              <option value="">Select a course code</option>
-              {courseCodes.map(code => (
-                <option key={code} value={code}>{code}</option>
+        {inputs.courses.map((course, courseIndex) => (
+          <div key={courseIndex} style={{ 
+            marginBottom: '20px', 
+            padding: '15px', 
+            border: '1px solid #ddd',
+            borderRadius: '5px',
+            position: 'relative'
+          }}>
+            <h4>Course {courseIndex + 1}</h4>
+            
+            {inputs.courses.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeCourse(courseIndex)}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  padding: '5px 10px',
+                  backgroundColor: '#ff4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Remove Course
+              </button>
+            )}
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label>
+                Course Code:
+                <select
+                  value={course.code}
+                  onChange={e => handleCourseChange(courseIndex, 'code', e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '5px',
+                    padding: '10px',
+                    border: errors.some(e => e.includes(`Course ${courseIndex + 1}`)) 
+                    ? '2px solid red' 
+                    : '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: '#f9f9f9'
+                  }}
+                >
+                  <option value="">Select a course code</option>
+                  {courseCodes.map(code => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <h4>Teachers</h4>
+              {course.teachers.map((teacher, teacherIndex) => (
+                <div key={teacherIndex} style={{ marginBottom: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <select
+                    value={teacher}
+                    onChange={e => handleFieldChange(courseIndex, 'teachers', teacherIndex, e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: errors.some(e => e.includes(teacher.trim())) 
+                        ? '2px solid red' 
+                        : '1px solid #ccc',
+                      borderRadius: '4px',
+                      backgroundColor: '#f9f9f9'
+                    }}
+                  >
+                    <option value="">Select a teacher</option>
+                    {teachers.map(t => (
+                      <option key={t._id} value={t.shortName}>
+                        {t.shortName} - {t.fullName}
+                      </option>
+                    ))}
+                  </select>
+                  {course.teachers.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeField(courseIndex, 'teachers', teacherIndex)}
+                      style={{
+                        padding: '10px 15px',
+                        backgroundColor: '#ff4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
               ))}
-            </select>
-          </label>
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <h4>Teachers</h4>
-          {inputs.teachers.map((teacher, index) => (
-            <div key={index} style={{ marginBottom: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <select
-                value={teacher}
-                onChange={e => handleChange('teachers', index, e.target.value)}
+              <button
+                type="button"
+                onClick={() => addField(courseIndex, 'teachers')}
                 style={{
-                  flex: 1,
-                  padding: '10px',
-                  border: errors.some(e => e.includes(teacher.trim())) 
-                    ? '2px solid red' 
-                    : '1px solid #ccc',
+                  padding: '10px 15px',
+                  backgroundColor: '#2b4d37',
+                  color: 'white',
+                  border: 'none',
                   borderRadius: '4px',
-                  backgroundColor: '#f9f9f9'
+                  cursor: 'pointer',
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '5px'
                 }}
               >
-                <option value="">Select a teacher</option>
-                {teachers.map(t => (
-                  <option key={t._id} value={t.shortName}>
-                    {t.shortName} - {t.fullName}
-                  </option>
-                ))}
-              </select>
-              {inputs.teachers.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeField('teachers', index)}
-                  style={{
-                    padding: '10px 15px',
-                    backgroundColor: '#ff4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  X
-                </button>
-              )}
+                + Add Teacher
+              </button>
             </div>
-          ))}
+
+            <div style={{ marginBottom: '15px' }}>
+              <h4>Rooms/Labs</h4>
+              {course.rooms.map((room, roomIndex) => (
+                <div key={roomIndex} style={{ marginBottom: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <select
+                    value={room}
+                    onChange={e => handleFieldChange(courseIndex, 'rooms', roomIndex, e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: errors.some(e => e.includes(room.trim())) 
+                        ? '2px solid red' 
+                        : '1px solid #ccc',
+                      borderRadius: '4px',
+                      backgroundColor: '#f9f9f9'
+                    }}
+                  >
+                    <option value="">Select a room</option>
+                    {roomOptions.map(rm => (
+                      <option key={rm} value={rm}>{rm}</option>
+                    ))}
+                  </select>
+                  {course.rooms.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeField(courseIndex, 'rooms', roomIndex)}
+                      style={{
+                        padding: '10px 15px',
+                        backgroundColor: '#ff4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addField(courseIndex, 'rooms')}
+                style={{
+                  padding: '10px 15px',
+                  backgroundColor: '#2b4d37',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '5px'
+                }}
+              >
+                + Add Room
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {isLabPeriod && (
           <button
             type="button"
-            onClick={() => addField('teachers')}
+            onClick={addCourse}
             style={{
-              padding: '10px 15px',
-              backgroundColor: '#2b4d37',
+              padding: '12px 20px',
+              backgroundColor: '#3a5f73',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              display: 'block',
               width: '100%',
-              marginTop: '5px'
+              marginBottom: '20px'
             }}
           >
-            + Add Teacher
+            + Add Course
           </button>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <h4>Rooms/Labs</h4>
-          {inputs.rooms.map((room, index) => (
-            <div key={index} style={{ marginBottom: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <select
-                value={room}
-                onChange={e => handleChange('rooms', index, e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  border: errors.some(e => e.includes(room.trim())) 
-                    ? '2px solid red' 
-                    : '1px solid #ccc',
-                  borderRadius: '4px',
-                  backgroundColor: '#f9f9f9'
-                }}
-              >
-                <option value="">Select a room</option>
-                {roomOptions.map(rm => (
-                  <option key={rm} value={rm}>{rm}</option>
-                ))}
-              </select>
-              {inputs.rooms.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeField('rooms', index)}
-                  style={{
-                    padding: '10px 15px',
-                    backgroundColor: '#ff4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  X
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addField('rooms')}
-            style={{
-              padding: '10px 15px',
-              backgroundColor: '#2b4d37',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'block',
-              width: '100%',
-              marginTop: '5px'
-            }}
-          >
-            + Add Room
-          </button>
-        </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
           {cellData?.content && (
@@ -366,7 +492,7 @@ const EditPopup = ({
               type="button"
               onClick={handleDelete}
               style={{
-                padding: '12px 10px',
+                padding: '12px 14px',
                 backgroundColor: '#ff4444',
                 color: 'white',
                 border: 'none',
@@ -383,7 +509,7 @@ const EditPopup = ({
               type="button"
               onClick={onClose}
               style={{
-                padding: '12px 20px',
+                padding: '12px 27px',
                 backgroundColor: '#f0f0f0',
                 color: '#333',
                 border: 'none',
@@ -396,7 +522,7 @@ const EditPopup = ({
             <button
               type="submit"
               style={{
-                padding: '12px 20px',
+                padding: '12px 27px',
                 backgroundColor: '#2b4d37',
                 color: 'white',
                 border: 'none',

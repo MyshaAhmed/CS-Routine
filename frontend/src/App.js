@@ -127,8 +127,11 @@ function App() {
       teacherSchedule,
       occupiedRooms,
       batchYear: batch?.year,
-      batchSemester: batch?.semester
+      batchSemester: batch?.semester,
+      contentObject: cellInfo.contentObject
     });
+    
+    // Show the edit popup
     setShowEditPopup(true);
   };
 

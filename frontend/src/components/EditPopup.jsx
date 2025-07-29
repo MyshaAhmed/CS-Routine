@@ -34,42 +34,42 @@ const EditPopup = ({
   }, [batchYear, batchSemester]);
 
   useEffect(() => {
-  if (cellData?.content) {
-    // Check if content is a string (old format) or object (new format)
-    if (typeof cellData.content === 'string') {
-      // Parse string format
-      const lines = cellData.content.split('\n');
-      const codeLine = lines[0] || '';
-      const teacherLine = lines[1] || '';
-      const roomLine = lines[2] || '';
-      
-      const codes = codeLine.split('/');
-      const teacherGroups = teacherLine.split('/').map(group => 
-        group.replace(/[()]/g, '').split('/').filter(t => t)
-      );
-      const rooms = roomLine.split('/');
-      
-      const courses = codes.map((code, i) => ({
-        code: code.trim(),
-        teachers: teacherGroups[i] || [''],
-        rooms: rooms[i] ? [rooms[i].trim()] : ['']
-      }));
-      
-      setInputs({ courses });
+    if (cellData?.content) {
+      // Handle both string and object formats
+      if (typeof cellData.content === 'string') {
+        // Parse string format
+        const lines = cellData.content.split('\n');
+        const codeLine = lines[0] || '';
+        const teacherLine = lines[1] || '';
+        const roomLine = lines[2] || '';
+        
+        const codes = codeLine.split('/');
+        const teacherGroups = teacherLine.split('/').map(group => 
+          group.replace(/[()]/g, '').split('/').filter(t => t)
+        );
+        const rooms = roomLine.split('/');
+        
+        const courses = codes.map((code, i) => ({
+          code: code.trim(),
+          teachers: teacherGroups[i] || [''],
+          rooms: rooms[i] ? [rooms[i].trim()] : ['']
+        }));
+        
+        setInputs({ courses });
+      } else {
+        // Handle object format
+        setInputs({
+          courses: [{
+            code: cellData.content.code || '',
+            teachers: cellData.content.teachers || [''],
+            rooms: cellData.content.rooms || ['']
+          }]
+        });
+      }
     } else {
-      // Handle object format
-      setInputs({
-        courses: [{
-          code: cellData.content.code || '',
-          teachers: cellData.content.teachers || [''],
-          rooms: cellData.content.rooms || ['']
-        }]
-      });
+      setInputs({ courses: [{ code: '', teachers: [''], rooms: [''] }] });
     }
-  } else {
-    setInputs({ courses: [{ code: '', teachers: [''], rooms: [''] }] });
-  }
-}, [cellData]);
+  }, [cellData]);
 
   const validateInputs = () => {
     const newErrors = [];
@@ -91,11 +91,9 @@ const EditPopup = ({
         newErrors.push(`Course ${index+1}: Invalid course code`);
       }
       
-      // Lab Course Validation
-      if (isLabPeriod && !isLabCourse) {
-        newErrors.push(`Course ${index+1}: Lab period requires sessional course (even code)`);
-      } else if (!isLabPeriod && isLabCourse) {
-        newErrors.push(`Course ${index+1}: Sessional courses only allowed in lab periods (1,4,7)`);
+      // Lab Course Validation: only sessional courses must be in lab periods
+      if (isLabCourse && !isLabPeriod) {
+        newErrors.push(`Course ${index+1}: Sessional courses (even codes) must be placed in lab periods (1,4,7)`);
       }
 
       // Teacher Validation
@@ -109,7 +107,7 @@ const EditPopup = ({
 
       // Teacher Constraints
       validTeachers.forEach(teacher => {
-        const teacherSchedule = cellData.contentObject?.teacherSchedule || {}[teacher] || {};
+        const teacherSchedule = cellData.contentObject?.teacherSchedule?.[teacher] || {};
         const currentSectionSchedule = teacherSchedule[currentSection] || [];
         
         // Filter lectures and get periods
@@ -159,7 +157,7 @@ const EditPopup = ({
 
       // Room Availability Check
       validRooms.forEach(room => {
-        if (cellData.contentObject?.occupiedRooms || {}[currentPeriod]?.includes(room)) {
+        if (cellData.contentObject?.occupiedRooms?.[currentPeriod]?.includes(room)) {
           newErrors.push(`${room} is occupied in period ${currentPeriod}`);
         }
       });

@@ -57,7 +57,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
     // Handle empty cells
     if (!schedule) return { content: '', className: '', colSpan: 1 };
 
-    // Handle sessional courses
+    // Handle sessional courses - only even-coded courses span 3 periods
     const isSessionalStart = schedule.isSessional && schedule.startPeriod === period;
     return {
       content: `${schedule.code}\n${formatTeachers(schedule.teachers)}\n${schedule.rooms.join('/')}`,
@@ -128,6 +128,7 @@ const DayTable = ({ day, batches, onCellClick, onDeleteBatch }) => {
                       const currentPeriod = periodIdx + 1;
                       const cell = getCellContent(batch, section, currentPeriod);
 
+                      // Skip subsequent periods of sessional courses
                       if (cell.colSpan === 1 && cell.className.includes('sessional-cell')) {
                         continue;
                       }

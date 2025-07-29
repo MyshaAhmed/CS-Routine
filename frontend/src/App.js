@@ -148,13 +148,8 @@ function App() {
 
     const codeValue = parseInt(newData.code);
     const isSessional = !isNaN(codeValue) && codeValue % 2 === 0;
-    const validSessionalPeriods = [1, 4, 7];
-    
-    if (isSessional && !validSessionalPeriods.includes(cellInfo.period)) {
-      alert('Sessional courses must be placed at 1st, 4th, or 7th period');
-      return;
-    }
 
+    // Calculate periods - sessional courses span 3 periods
     const periods = isSessional ? 
       [cellInfo.period, cellInfo.period + 1, cellInfo.period + 2].filter(p => p <= 9) : 
       [cellInfo.period];
